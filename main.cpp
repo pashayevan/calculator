@@ -11,7 +11,7 @@ double applyOperation(double a, double b, char op) {
         case '-': return a - b;
         case '*': return a * b;
         case '/': return a / b;
-        case '^': return std::pow(a, b);  // отриц степ
+        case '^': return std::pow(a, b);  // отрицательная степень
         default:
             throw std::invalid_argument("Недопустимый оператор");
     }
@@ -25,7 +25,7 @@ int precedence(char op) {
 }
 
 bool isNumber(char c) {
-    return std::isdigit(c) || c == '.';
+    return std::isdigit(c) || c == '.' || c == '-';
 }
 
 double evaluateExpression(const std::string& expression) {
@@ -38,12 +38,28 @@ double evaluateExpression(const std::string& expression) {
             ++i;
             continue;
         }
+
         if (isNumber(expression[i])) {
             std::string numberStr;
-            while (i < expression.size() && isNumber(expression[i])) {
+            if (expression[i] == '-') {
+                numberStr += expression[i++];
+                if (i < expression.size() && (isdigit(expression[i]) || expression[i] == '.')) {
+                    numberStr += expression[i++];
+                    while (i < expression.size() && (isdigit(expression[i]) || expression[i] == '.')) {
+                        numberStr += expression[i++];
+                    }
+                    values.push_back(std::stod(numberStr));
+                    continue;
+                }
+                numberStr.clear();
+            }
+
+            while (i < expression.size() && (isdigit(expression[i]) || expression[i] == '.')) {
                 numberStr += expression[i++];
             }
-            values.push_back(std::stod(numberStr));
+            if (!numberStr.empty()) {
+                values.push_back(std::stod(numberStr));
+            }
         } else {
             while (!operators.empty() && precedence(operators.back()) >= precedence(expression[i])) {
                 double b = values.back(); values.pop_back();
