@@ -11,7 +11,7 @@ double applyOperation(double a, double b, char op) {
         case '-': return a - b;
         case '*': return a * b;
         case '/': return a / b;
-        case '^': return std::pow(a, b);  // отрицательная степень
+        case '^': return std::pow(a, b);  // Возведение в степень
         default:
             throw std::invalid_argument("Недопустимый оператор");
     }
@@ -32,6 +32,7 @@ double evaluateExpression(const std::string& expression) {
     std::vector<double> values;
     std::vector<char> operators;
     size_t i = 0;
+    bool lastWasOperator = true;  // Флаг для отслеживания оператора на предыдущем шаге
 
     while (i < expression.size()) {
         if (isspace(expression[i])) {
@@ -60,14 +61,23 @@ double evaluateExpression(const std::string& expression) {
             if (!numberStr.empty()) {
                 values.push_back(std::stod(numberStr));
             }
+            lastWasOperator = false;  // Последний символ был числом
+        } else if (std::isalpha(expression[i])) {
+            throw std::invalid_argument("Недопустимые символы в выражении: буквы");
         } else {
-            while (!operators.empty() && precedence(operators.back()) >= precedence(expression[i])) {
-                double b = values.back(); values.pop_back();
-                double a = values.back(); values.pop_back();
-                char op = operators.back(); operators.pop_back();
-                values.push_back(applyOperation(a, b, op));
+            // Проверка на два оператора подряд
+            if (!lastWasOperator) {
+                while (!operators.empty() && precedence(operators.back()) >= precedence(expression[i])) {
+                    double b = values.back(); values.pop_back();
+                    double a = values.back(); values.pop_back();
+                    char op = operators.back(); operators.pop_back();
+                    values.push_back(applyOperation(a, b, op));
+                }
+                operators.push_back(expression[i]);
+                lastWasOperator = true;  // Последний символ был оператором
+            } else {
+                throw std::invalid_argument("Ошибка: два оператора подряд");
             }
-            operators.push_back(expression[i]);
             ++i;
         }
     }
