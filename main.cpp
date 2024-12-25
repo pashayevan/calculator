@@ -10,8 +10,10 @@ double applyOperation(double a, double b, char op) {
         case '+': return a + b;
         case '-': return a - b;
         case '*': return a * b;
-        case '/': return a / b;
-        case '^': return std::pow(a, b);  // Возведение в степень
+        case '/':
+            if (b == 0) throw std::invalid_argument("Деление на ноль");
+            return a / b;
+        case '^': return std::pow(a, b);
         default:
             throw std::invalid_argument("Недопустимый оператор");
     }
@@ -25,14 +27,14 @@ int precedence(char op) {
 }
 
 bool isNumber(char c) {
-    return std::isdigit(c) || c == '.' || c == '-';
+    return std::isdigit(c) || c == '.';
 }
 
 double evaluateExpression(const std::string& expression) {
     std::vector<double> values;
     std::vector<char> operators;
     size_t i = 0;
-    bool lastWasOperator = true;  // Флаг для отслеживания оператора на предыдущем шаге
+    bool lastWasOperator = true; // Флаг для отслеживания предыдущего символа
 
     while (i < expression.size()) {
         if (isspace(expression[i])) {
@@ -40,44 +42,35 @@ double evaluateExpression(const std::string& expression) {
             continue;
         }
 
-        if (isNumber(expression[i])) {
+        if (isNumber(expression[i]) || (expression[i] == '-' && lastWasOperator)) {
             std::string numberStr;
             if (expression[i] == '-') {
                 numberStr += expression[i++];
-                if (i < expression.size() && (isdigit(expression[i]) || expression[i] == '.')) {
-                    numberStr += expression[i++];
-                    while (i < expression.size() && (isdigit(expression[i]) || expression[i] == '.')) {
-                        numberStr += expression[i++];
-                    }
-                    values.push_back(std::stod(numberStr));
-                    continue;
-                }
-                numberStr.clear();
             }
-
-            while (i < expression.size() && (isdigit(expression[i]) || expression[i] == '.')) {
+            while (i < expression.size() && isNumber(expression[i])) {
                 numberStr += expression[i++];
             }
-            if (!numberStr.empty()) {
+            try {
                 values.push_back(std::stod(numberStr));
+            } catch (...) {
+                throw std::invalid_argument("Некорректное число");
             }
-            lastWasOperator = false;  // Последний символ был числом
+            lastWasOperator = false;
         } else if (std::isalpha(expression[i])) {
             throw std::invalid_argument("Недопустимые символы в выражении: буквы");
         } else {
-            // Проверка на два оператора подряд
-            if (!lastWasOperator) {
-                while (!operators.empty() && precedence(operators.back()) >= precedence(expression[i])) {
-                    double b = values.back(); values.pop_back();
-                    double a = values.back(); values.pop_back();
-                    char op = operators.back(); operators.pop_back();
-                    values.push_back(applyOperation(a, b, op));
-                }
-                operators.push_back(expression[i]);
-                lastWasOperator = true;  // Последний символ был оператором
-            } else {
+            if (lastWasOperator && expression[i] != '-') {
                 throw std::invalid_argument("Ошибка: два оператора подряд");
             }
+
+            while (!operators.empty() && precedence(operators.back()) >= precedence(expression[i])) {
+                double b = values.back(); values.pop_back();
+                double a = values.back(); values.pop_back();
+                char op = operators.back(); operators.pop_back();
+                values.push_back(applyOperation(a, b, op));
+            }
+            operators.push_back(expression[i]);
+            lastWasOperator = true;
             ++i;
         }
     }
@@ -87,6 +80,10 @@ double evaluateExpression(const std::string& expression) {
         double a = values.back(); values.pop_back();
         char op = operators.back(); operators.pop_back();
         values.push_back(applyOperation(a, b, op));
+    }
+
+    if (values.size() != 1) {
+        throw std::invalid_argument("Некорректное выражение");
     }
 
     return values.back();
