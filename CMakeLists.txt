@@ -3,4 +3,7 @@ project(calculator)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(calculator main.cpp)
+add_executable(calculator main.cpp
+        calc.cpp
+)
+add_executable(tests calc.cpp test.cpp)
