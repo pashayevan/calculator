@@ -1,110 +1,32 @@
 #include <iostream>
 #include <string>
-#include <vector>
-#include <cmath>
-#include <cctype>
-#include <stdexcept>
-
-double applyOperation(double a, double b, char op) {
-    switch (op) {
-        case '+': return a + b;
-        case '-': return a - b;
-        case '*': return a * b;
-        case '/':
-            if (b == 0) throw std::invalid_argument("Деление на ноль");
-            return a / b;
-        case '^': return std::pow(a, b);
-        default:
-            throw std::invalid_argument("Недопустимый оператор");
-    }
-}
-
-int precedence(char op) {
-    if (op == '^') return 3;
-    if (op == '*' || op == '/') return 2;
-    if (op == '+' || op == '-') return 1;
-    return 0;
-}
-
-bool isNumber(char c) {
-    return std::isdigit(c) || c == '.';
-}
-
-double evaluateExpression(const std::string& expression) {
-    std::vector<double> values;
-    std::vector<char> operators;
-    size_t i = 0;
-    bool lastWasOperator = true; // Флаг для отслеживания предыдущего символа
-
-    while (i < expression.size()) {
-        if (isspace(expression[i])) {
-            ++i;
-            continue;
-        }
-
-        if (isNumber(expression[i]) || (expression[i] == '-' && lastWasOperator)) {
-            std::string numberStr;
-            if (expression[i] == '-') {
-                numberStr += expression[i++];
-            }
-            while (i < expression.size() && isNumber(expression[i])) {
-                numberStr += expression[i++];
-            }
-            try {
-                values.push_back(std::stod(numberStr));
-            } catch (...) {
-                throw std::invalid_argument("Некорректное число");
-            }
-            lastWasOperator = false;
-        } else if (std::isalpha(expression[i])) {
-            throw std::invalid_argument("Недопустимые символы в выражении: буквы");
-        } else {
-            if (lastWasOperator && expression[i] != '-') {
-                throw std::invalid_argument("Ошибка: два оператора подряд");
-            }
-
-            while (!operators.empty() && precedence(operators.back()) >= precedence(expression[i])) {
-                double b = values.back(); values.pop_back();
-                double a = values.back(); values.pop_back();
-                char op = operators.back(); operators.pop_back();
-                values.push_back(applyOperation(a, b, op));
-            }
-            operators.push_back(expression[i]);
-            lastWasOperator = true;
-            ++i;
-        }
-    }
-
-    while (!operators.empty()) {
-        double b = values.back(); values.pop_back();
-        double a = values.back(); values.pop_back();
-        char op = operators.back(); operators.pop_back();
-        values.push_back(applyOperation(a, b, op));
-    }
-
-    if (values.size() != 1) {
-        throw std::invalid_argument("Некорректное выражение");
-    }
-
-    return values.back();
-}
+#include <algorithm>
+#include "calc.h"
 
 int main() {
-    std::cout << "Введите выражение (или пустую строку для выхода):\n";
+    std::string expr;
 
     while (true) {
-        std::string input;
-        std::getline(std::cin, input);
-        if (input.empty()) {
+        std::cout << "Введите выражение (или пустую строку для выхода): ";
+        std::getline(std::cin,expr);
+
+        if (expr=="") {
             break;
         }
 
         try {
-            double result = evaluateExpression(input);
-            std::cout << "Результат: " << result << std::endl;
+            expr.erase(std::remove_if(expr.begin(),expr.end(),::isspace),expr.end());
+
+            if (!validExpr(expr)) {
+                throw std::invalid_argument("Некорректное выражение.");
+            }
+
+            double res=calc(expr);
+            std::cout<<"Результат: "<<res<<"\n";
         } catch (const std::exception& e) {
-            std::cout << "Ошибка: " << e.what() << std::endl;
+            std::cerr<< "Ошибка: "<<e.what()<<"\n";
         }
     }
+
     return 0;
 }
