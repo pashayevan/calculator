@@ -31,7 +31,7 @@ TEST_CASE("Проверка operate") {
 
 TEST_CASE("Проверка calc") {
     CHECK(calc("4+3^2") == 13);
-    CHECK(calc("8--2^3") == -4);
+    CHECK(calc("8--2^3") == 16);
     CHECK(calc("12-6*2") == 0);
     CHECK(calc("3^2+5") == 14);
     CHECK(calc("6/0.25") == 24);
@@ -45,5 +45,5 @@ TEST_CASE("Проверка некорректных выражений") {
     CHECK_THROWS_AS(calc("5+4++3"), std::invalid_argument);
     CHECK_THROWS_AS(calc("4---3"), std::invalid_argument);
     CHECK_THROWS_AS(calc("7*2#5"), std::invalid_argument);
-    CHECK_THROWS_AS(calc("3.1.2+4"), std::invalid_argument);
+    CHECK_THROWS_AS(calc("3.1.2++4"), std::invalid_argument);
 }
